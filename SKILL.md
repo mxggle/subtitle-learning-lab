@@ -17,9 +17,9 @@ When processing a video file, determine the subtitle steps based on the user's p
 2. **Only One Subtitle Available** ✅ Implemented:
    - If the video has only one subtitle track (e.g., English), translate this subtitle to the target language specified by the user's prompt (e.g., Chinese) using the new LLM context-aware translation tool.
 
-3. **No Subtitles Available** ⚠️ Not yet automated:
-   - If there are no existing subtitles in the video, use the Whisper ASR pipeline to transcribe the audio and generate the subtitles.
-   - *This step requires a separate Whisper setup. Do not assume the script handles this automatically.*
+3. **No Subtitles Available** ✅ Implemented:
+   - If there are no existing subtitles in the video, use the `transcribe` command to generate them automatically using the Whisper ASR pipeline.
+   - *This step requires the `whisper` CLI to be installed (e.g., `pip install openai-whisper`).*
 
 ## Step 1: Inspect & Prepare
 
@@ -37,6 +37,19 @@ Extract a specific track and convert to SRT if needed:
 # Auto-detect language and extract to SRT
 python skills/subtitle-learning-lab/scripts/learning_lab.py extract movie.mkv --to-srt
 ```
+
+## Step 2b: Transcribe Audio (Whisper ASR)
+
+If the video has no existing subtitles, generate them using the `transcribe` command:
+
+```bash
+# Transcribe audio to a subtitle file (auto-detects language by default)
+python skills/subtitle-learning-lab/scripts/learning_lab.py transcribe movie.mkv
+
+# Specify the language and model (default model is 'turbo')
+python skills/subtitle-learning-lab/scripts/learning_lab.py transcribe movie.mkv --language ja --model small
+```
+*Note: This requires the `whisper` CLI to be installed (e.g., `pip install openai-whisper`).*
 
 ## Step 3: Merge Subtitles (Bilingual)
 

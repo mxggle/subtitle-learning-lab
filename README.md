@@ -10,8 +10,8 @@ flowchart TD
     B --> C{"How many\nsubtitle tracks?"}
 
     C -->|"≥ 2 tracks"| D["✅ Merge Tracks\n(bilingual SRT)"]
-    C -->|"1 track"| E["⚠️ Translate\n(coming soon)"]
-    C -->|"0 tracks"| F["⚠️ Whisper ASR\n(coming soon)"]
+    C -->|"1 track"| E["✅ Translate\n(implemented)"]
+    C -->|"0 tracks"| F["✅ Whisper ASR\n(implemented)"]
 
     D --> G["📝 Generate\nLearning Markdown"]
     E --> G
@@ -28,8 +28,8 @@ flowchart TD
     style B fill:#5b6abf,stroke:#3d478a,color:#fff
     style C fill:#7c5cbf,stroke:#553d8a,color:#fff
     style D fill:#27ae60,stroke:#1e8449,color:#fff
-    style E fill:#f39c12,stroke:#d68910,color:#fff
-    style F fill:#f39c12,stroke:#d68910,color:#fff
+    style E fill:#27ae60,stroke:#1e8449,color:#fff
+    style F fill:#27ae60,stroke:#1e8449,color:#fff
     style G fill:#5b6abf,stroke:#3d478a,color:#fff
     style H fill:#4a90d9,stroke:#2c5f8a,color:#fff
     style I fill:#2c3e50,stroke:#1a252f,color:#ecf0f1
@@ -197,7 +197,7 @@ When files are packaged for study, the following convention is used:
 - [ ] `analyze` — Vocabulary frequency lists and definitions
 - [x] `translate` — Auto-translate tracks via LLM or API
 - [ ] `learning-pack` — All-in-one study package generator
-- [ ] Whisper ASR integration for videos with no subtitles
+- [x] Whisper ASR integration for videos with no subtitles
 
 ## License
 

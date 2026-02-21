@@ -503,6 +503,50 @@ def translate_stream(
     return 0
 
 
+def transcribe_stream(
+    input_path: Path,
+    output_path: Path | None,
+    model: str = "turbo",
+    language: str | None = None
+) -> int:
+    """Run Whisper ASR on a media file to generate subtitles."""
+    if shutil.which("whisper") is None:
+        print("error: 'whisper' command not found. Please install openai-whisper.", file=sys.stderr)
+        return 1
+
+    print(f"Transcribing {input_path.name} using Whisper ({model} model)...")
+    
+    cmd = [
+        "whisper",
+        str(input_path),
+        "--model", model,
+        "--output_format", "srt",
+    ]
+    
+    if language:
+        cmd.extend(["--language", language])
+        
+    out_dir = output_path.parent if output_path else input_path.parent
+    cmd.extend(["--output_dir", str(out_dir)])
+    
+    p = _run(cmd)
+    if p.returncode != 0:
+        print(p.stderr.strip() or "whisper failed", file=sys.stderr)
+        return p.returncode
+        
+    expected_out = out_dir / f"{input_path.stem}.srt"
+    
+    if output_path and expected_out.exists() and output_path.absolute() != expected_out.absolute():
+        shutil.move(str(expected_out), str(output_path))
+        print(f"Transcription complete! Saved to {output_path}")
+    elif expected_out.exists():
+        print(f"Transcription complete! Saved to {expected_out}")
+    else:
+        print(f"Warning: Expected whisper output {expected_out} not found.", file=sys.stderr)
+
+    return 0
+
+
 def main() -> int:
     _require_bin("ffprobe")
     _require_bin("ffmpeg")
@@ -546,6 +590,12 @@ def main() -> int:
     p_translate.add_argument("--model", type=str, default="gpt-4o-mini", help="Model name to use (default: gpt-4o-mini)")
     p_translate.add_argument("--output", type=Path, default=None, help="output .srt file path")
 
+    p_transcribe = sub.add_parser("transcribe", help="Transcribe video/audio to subtitle using Whisper ASR")
+    p_transcribe.add_argument("input", type=Path, help="input video or audio file")
+    p_transcribe.add_argument("--model", type=str, default="turbo", help="Whisper model to use (default: turbo)")
+    p_transcribe.add_argument("--language", type=str, default=None, help="Language code for transcription (e.g. en, ja)")
+    p_transcribe.add_argument("--output", type=Path, default=None, help="output .srt file path")
+
     args = parser.parse_args()
 
     # Set module-level verbosity.
@@ -569,6 +619,9 @@ def main() -> int:
 
     if args.command == "translate":
         return translate_stream(args.input, args.output, args.target_language, args.api_key, args.base_url, args.model)
+
+    if args.command == "transcribe":
+        return transcribe_stream(args.input, args.output, args.model, args.language)
 
     return 0
 
