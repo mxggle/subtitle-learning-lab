@@ -2,8 +2,6 @@
 
 A practical subtitle engine for local media: **list, extract, transcribe, translate, and merge** subtitle tracks.
 
-> Scope note: this repo is now **engine-only**. Learning markdown/vocabulary generation is being split into a separate skill.
-
 ## Core Workflow
 
 ```mermaid
