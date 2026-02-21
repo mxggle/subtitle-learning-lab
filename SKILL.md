@@ -1,9 +1,9 @@
 ---
-name: subtitle-learning-lab
+name: subtitle-pipeline
 description: "Subtitle processing engine: list/extract/transcribe/translate/merge subtitle tracks from local media files."
 ---
 
-# Subtitle Learning Lab (Engine Scope)
+# Subtitle Pipeline (Engine Scope)
 
 This skill is now focused on **subtitle processing only**.
 
@@ -26,31 +26,31 @@ When processing a video file, choose the path based on available subtitles:
 
 ### 1) List streams
 ```bash
-python skills/subtitle-learning-lab/scripts/learning_lab.py list movie.mkv
+python skills/subtitle-pipeline/scripts/pipeline.py list movie.mkv
 ```
 
 ### 2) Extract track
 ```bash
-python skills/subtitle-learning-lab/scripts/learning_lab.py extract movie.mkv --to-srt
-python skills/subtitle-learning-lab/scripts/learning_lab.py extract movie.mkv --language eng --to-srt
+python skills/subtitle-pipeline/scripts/pipeline.py extract movie.mkv --to-srt
+python skills/subtitle-pipeline/scripts/pipeline.py extract movie.mkv --language eng --to-srt
 ```
 
 ### 3) Transcribe (Whisper)
 ```bash
-python skills/subtitle-learning-lab/scripts/learning_lab.py transcribe movie.mkv
-python skills/subtitle-learning-lab/scripts/learning_lab.py transcribe movie.mkv --language en --model small
+python skills/subtitle-pipeline/scripts/pipeline.py transcribe movie.mkv
+python skills/subtitle-pipeline/scripts/pipeline.py transcribe movie.mkv --language en --model small
 ```
 
 ### 4) Translate
 ```bash
 # Requires OPENAI_API_KEY (or --api-key)
-python skills/subtitle-learning-lab/scripts/learning_lab.py translate movie.eng.srt --target-language "Chinese"
+python skills/subtitle-pipeline/scripts/pipeline.py translate movie.eng.srt --target-language "Chinese"
 ```
 
 ### 5) Merge
 ```bash
-python skills/subtitle-learning-lab/scripts/learning_lab.py merge movie.mkv --indices 0 1 --output movie.bilingual.srt
-python skills/subtitle-learning-lab/scripts/learning_lab.py --verbose merge movie.mkv --languages eng chi
+python skills/subtitle-pipeline/scripts/pipeline.py merge movie.mkv --indices 0 1 --output movie.bilingual.srt
+python skills/subtitle-pipeline/scripts/pipeline.py --verbose merge movie.mkv --languages eng chi
 ```
 
 ## Output Naming (Engine)

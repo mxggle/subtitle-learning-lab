@@ -1,4 +1,4 @@
-# 🎬 Subtitle Learning Lab
+# 🎬 Subtitle Pipeline
 
 A practical subtitle engine for local media: **list, extract, transcribe, translate, and merge** subtitle tracks.
 
@@ -38,46 +38,46 @@ flowchart TD
 
 ```bash
 # 1) List subtitle tracks
-python scripts/learning_lab.py list movie.mkv
+python scripts/pipeline.py list movie.mkv
 
 # 2) Extract English subtitle track to SRT
-python scripts/learning_lab.py extract movie.mkv --language eng --to-srt
+python scripts/pipeline.py extract movie.mkv --language eng --to-srt
 
 # 3) Translate SRT to Chinese
-python scripts/learning_lab.py translate movie.eng.srt --target-language "Chinese"
+python scripts/pipeline.py translate movie.eng.srt --target-language "Chinese"
 
 # 4) Merge English + Chinese tracks from container
-python scripts/learning_lab.py merge movie.mkv --languages eng chi
+python scripts/pipeline.py merge movie.mkv --languages eng chi
 
 # 5) If no subtitles exist, transcribe first
-python scripts/learning_lab.py transcribe movie.mkv --model turbo
+python scripts/pipeline.py transcribe movie.mkv --model turbo
 ```
 
 ## CLI Commands
 
 ### `list`
 ```bash
-python scripts/learning_lab.py list <video>
+python scripts/pipeline.py list <video>
 ```
 
 ### `extract`
 ```bash
-python scripts/learning_lab.py extract <video> [--index N | --language CODE] [--to-srt] [--output PATH]
+python scripts/pipeline.py extract <video> [--index N | --language CODE] [--to-srt] [--output PATH]
 ```
 
 ### `merge`
 ```bash
-python scripts/learning_lab.py merge <video> [--indices N N | --languages CODE CODE] [--output PATH]
+python scripts/pipeline.py merge <video> [--indices N N | --languages CODE CODE] [--output PATH]
 ```
 
 ### `translate`
 ```bash
-python scripts/learning_lab.py translate <srt-or-video> --target-language "Chinese" [--api-key ...] [--base-url ...] [--model ...] [--output ...]
+python scripts/pipeline.py translate <srt-or-video> --target-language "Chinese" [--api-key ...] [--base-url ...] [--model ...] [--output ...]
 ```
 
 ### `transcribe`
 ```bash
-python scripts/learning_lab.py transcribe <video-or-audio> [--model turbo] [--language en] [--output PATH]
+python scripts/pipeline.py transcribe <video-or-audio> [--model turbo] [--language en] [--output PATH]
 ```
 
 ## Output Convention
@@ -96,11 +96,11 @@ When testing the skill on a sample video in the `tests/` directory, the followin
 ## Project Structure
 
 ```text
-subtitle-learning-lab/
+subtitle-pipeline/
 ├── SKILL.md
 ├── README.md
 ├── scripts/
-│   └── learning_lab.py
+│   └── pipeline.py
 ├── tests/
 │   ├── test_merge.py
 │   └── test_translation.py

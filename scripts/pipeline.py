@@ -2,13 +2,13 @@
 """Subtitle processing CLI for local media files.
 
 Examples:
-  python scripts/learning_lab.py list movie.mkv
-  python scripts/learning_lab.py extract movie.mkv
-  python scripts/learning_lab.py extract movie.mkv --index 0
-  python scripts/learning_lab.py extract movie.mkv --language eng --to-srt
-  python scripts/learning_lab.py transcribe movie.mkv --model turbo
-  python scripts/learning_lab.py translate movie.eng.srt --target-language "Chinese"
-  python scripts/learning_lab.py merge movie.mkv --languages eng chi --verbose
+  python scripts/pipeline.py list movie.mkv
+  python scripts/pipeline.py extract movie.mkv
+  python scripts/pipeline.py extract movie.mkv --index 0
+  python scripts/pipeline.py extract movie.mkv --language eng --to-srt
+  python scripts/pipeline.py transcribe movie.mkv --model turbo
+  python scripts/pipeline.py translate movie.eng.srt --target-language "Chinese"
+  python scripts/pipeline.py merge movie.mkv --languages eng chi --verbose
 """
 
 from __future__ import annotations

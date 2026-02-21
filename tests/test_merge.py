@@ -1,4 +1,4 @@
-"""Tests for the subtitle merge and SRT parsing logic in learning_lab.py."""
+"""Tests for the subtitle merge and SRT parsing logic in pipeline.py."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import pytest
 # Ensure the scripts directory is importable.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
-from learning_lab import _format_srt_time, _parse_srt, _parse_srt_time
+from pipeline import _format_srt_time, _parse_srt, _parse_srt_time
 
 
 # ---------------------------------------------------------------------------
@@ -115,7 +115,7 @@ class TestParseSrt:
 # Re-implement the pure-Python merge core here so we can test it in
 # isolation without needing an actual video file.  The constants are
 # imported from the main module to ensure consistency.
-from learning_lab import MIN_OVERLAP_RATIO, MIN_OVERLAP_SECONDS
+from pipeline import MIN_OVERLAP_RATIO, MIN_OVERLAP_SECONDS
 
 
 def _merge_parsed(contents: list[list[dict]]) -> list[dict]:
