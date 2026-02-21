@@ -14,21 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 from pipeline import _chunk_list, translate_chunk
 
 
-# ---------------------------------------------------------------------------
-# _chunk_list
-# ---------------------------------------------------------------------------
-
-class TestChunkList:
-    def test_basic_chunking(self):
-        lst = list(range(10))
-        chunks = list(_chunk_list(lst, 3))
-        assert len(chunks) == 4
-        assert chunks[0] == [0, 1, 2]
-        assert chunks[3] == [9]
-
-    def test_exact_fit(self):
-        chunks = list(_chunk_list([1, 2, 3, 4], 2))
-        assert chunks == [[1, 2], [3, 4]]
+# _chunk_list is tested comprehensively in test_helpers.py.
 
 
 # ---------------------------------------------------------------------------

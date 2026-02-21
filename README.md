@@ -131,7 +131,14 @@ subtitle-pipeline/
 ├── scripts/
 │   └── pipeline.py
 ├── tests/
+│   ├── test_cli.py
+│   ├── test_extract.py
+│   ├── test_helpers.py
 │   ├── test_merge.py
+│   ├── test_merge_streams.py
+│   ├── test_pick_stream.py
+│   ├── test_probe_and_list.py
+│   ├── test_transcribe.py
 │   └── test_translation.py
 └── references/
     └── subtitle-notes.md

@@ -112,52 +112,8 @@ class TestParseSrt:
 # Merge logic (unit-level, no ffmpeg needed)
 # ---------------------------------------------------------------------------
 
-# Re-implement the pure-Python merge core here so we can test it in
-# isolation without needing an actual video file.  The constants are
-# imported from the main module to ensure consistency.
-from pipeline import MIN_OVERLAP_RATIO, MIN_OVERLAP_SECONDS
-
-
-def _merge_parsed(contents: list[list[dict]]) -> list[dict]:
-    """Pure merge logic extracted for testing (mirrors merge_streams core)."""
-    primary_entries = [
-        {"start": e["start"], "end": e["end"], "texts": [e["text"]]}
-        for e in contents[0]
-    ]
-
-    standalone_entries: list[dict] = []
-    for stream_idx in range(1, len(contents)):
-        for s_entry in contents[stream_idx]:
-            overlaps: list[dict] = []
-            s_len = (s_entry["end"] - s_entry["start"]).total_seconds()
-
-            for p_entry in primary_entries:
-                overlap_start = max(p_entry["start"], s_entry["start"])
-                overlap_end = min(p_entry["end"], s_entry["end"])
-                o_len = (overlap_end - overlap_start).total_seconds()
-                if o_len > 0:
-                    p_len = (p_entry["end"] - p_entry["start"]).total_seconds()
-                    if o_len >= MIN_OVERLAP_SECONDS or o_len > MIN_OVERLAP_RATIO * min(s_len, p_len):
-                        overlaps.append(p_entry)
-
-            if not overlaps:
-                standalone_entries.append(
-                    {"start": s_entry["start"], "end": s_entry["end"], "texts": [s_entry["text"]]}
-                )
-            else:
-                for p in overlaps:
-                    if s_entry["text"] not in p["texts"]:
-                        p["texts"].append(s_entry["text"])
-
-    merged = [
-        {"start": p["start"], "end": p["end"], "text": "\n".join(p["texts"])}
-        for p in primary_entries
-    ] + [
-        {"start": s["start"], "end": s["end"], "text": "\n".join(s["texts"])}
-        for s in standalone_entries
-    ]
-    merged.sort(key=lambda x: x["start"])
-    return merged
+# Import the extracted pure-Python merge logic from the main module.
+from pipeline import _merge_parsed
 
 
 class TestMerge:

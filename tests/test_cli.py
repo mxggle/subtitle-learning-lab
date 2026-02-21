@@ -17,7 +17,8 @@ import pipeline
 @pytest.fixture(autouse=True)
 def stub_require_bin():
     with patch("pipeline._require_bin"):
-        yield
+        with patch("pathlib.Path.exists", return_value=True):
+            yield
 
 
 class TestMainList:

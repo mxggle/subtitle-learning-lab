@@ -20,6 +20,7 @@ import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Iterator
 from datetime import timedelta
 from pathlib import Path
 
@@ -54,8 +55,9 @@ CODEC_TO_EXT = {
     "hdmv_pgs_subtitle": "sup",
 }
 
-# Module-level verbosity flag, set by CLI --verbose / --quiet.
+# Module-level verbosity flags, set by CLI --verbose / --quiet.
 _verbose = False
+_quiet = False
 
 
 def _parse_srt_time(time_str: str) -> timedelta:
@@ -136,8 +138,8 @@ def probe_subtitle_streams(input_path: Path) -> list[dict]:
     ]
     p = _run(cmd)
     if p.returncode != 0:
-        print(p.stderr.strip() or "ffprobe failed", file=sys.stderr)
-        sys.exit(p.returncode)
+        msg = p.stderr.strip() or "ffprobe failed"
+        raise RuntimeError(msg)
 
     payload = json.loads(p.stdout or "{}")
     streams = payload.get("streams", [])
@@ -157,16 +159,21 @@ def probe_subtitle_streams(input_path: Path) -> list[dict]:
 
 
 def list_streams(input_path: Path) -> int:
-    streams = probe_subtitle_streams(input_path)
+    try:
+        streams = probe_subtitle_streams(input_path)
+    except RuntimeError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
     if not streams:
         print("No subtitle streams found.")
         return 1
 
-    print("subtitle_index\tglobal_index\tlanguage\tcodec\ttitle")
-    for s in streams:
-        print(
-            f"{s['subtitle_index']}\t{s['global_index']}\t{s['language']}\t{s['codec']}\t{s['title']}"
-        )
+    if not _quiet:
+        print("subtitle_index\tglobal_index\tlanguage\tcodec\ttitle")
+        for s in streams:
+            print(
+                f"{s['subtitle_index']}\t{s['global_index']}\t{s['language']}\t{s['codec']}\t{s['title']}"
+            )
     return 0
 
 
@@ -196,7 +203,11 @@ def extract_stream(
     language: str | None,
     to_srt: bool,
 ) -> int:
-    streams = probe_subtitle_streams(input_path)
+    try:
+        streams = probe_subtitle_streams(input_path)
+    except RuntimeError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
     if not streams:
         print("No subtitle streams found.", file=sys.stderr)
         return 1
@@ -229,10 +240,58 @@ def extract_stream(
         print(p.stderr.strip() or "ffmpeg failed", file=sys.stderr)
         return p.returncode
 
-    print(
-        f"Extracted subtitle stream {chosen['subtitle_index']} ({chosen['language']}, {codec}) -> {output_path}"
-    )
+    if not _quiet:
+        print(
+            f"Extracted subtitle stream {chosen['subtitle_index']} ({chosen['language']}, {codec}) -> {output_path}"
+        )
     return 0
+
+
+def _merge_parsed(contents: list[list[dict]]) -> list[dict]:
+    """Pure merge logic: combine parsed SRT entries from multiple streams.
+
+    The first list in *contents* is the primary stream.  Entries from
+    secondary streams are attached to overlapping primary entries, or
+    kept standalone when there is no overlap.
+    """
+    primary_entries = [
+        {"start": e["start"], "end": e["end"], "texts": [e["text"]]}
+        for e in contents[0]
+    ]
+
+    standalone_entries: list[dict] = []
+    for stream_idx in range(1, len(contents)):
+        for s_entry in contents[stream_idx]:
+            overlaps: list[dict] = []
+            s_len = (s_entry["end"] - s_entry["start"]).total_seconds()
+
+            for p_entry in primary_entries:
+                overlap_start = max(p_entry["start"], s_entry["start"])
+                overlap_end = min(p_entry["end"], s_entry["end"])
+                o_len = (overlap_end - overlap_start).total_seconds()
+                if o_len > 0:
+                    p_len = (p_entry["end"] - p_entry["start"]).total_seconds()
+                    if o_len >= MIN_OVERLAP_SECONDS or o_len > MIN_OVERLAP_RATIO * min(s_len, p_len):
+                        overlaps.append(p_entry)
+
+            if not overlaps:
+                standalone_entries.append(
+                    {"start": s_entry["start"], "end": s_entry["end"], "texts": [s_entry["text"]]}
+                )
+            else:
+                for p in overlaps:
+                    if s_entry["text"] not in p["texts"]:
+                        p["texts"].append(s_entry["text"])
+
+    merged = [
+        {"start": p["start"], "end": p["end"], "text": "\n".join(p["texts"])}
+        for p in primary_entries
+    ] + [
+        {"start": s["start"], "end": s["end"], "text": "\n".join(s["texts"])}
+        for s in standalone_entries
+    ]
+    merged.sort(key=lambda x: x["start"])
+    return merged
 
 
 def merge_streams(
@@ -241,7 +300,11 @@ def merge_streams(
     indices: list[int] | None,
     languages: list[str] | None,
 ) -> int:
-    streams = probe_subtitle_streams(input_path)
+    try:
+        streams = probe_subtitle_streams(input_path)
+    except RuntimeError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
     if not streams:
         print("No subtitle streams found.", file=sys.stderr)
         return 1
@@ -288,56 +351,7 @@ def merge_streams(
             return p.returncode
         contents.append(_parse_srt(p.stdout))
 
-    # Merge logic mapping secondary streams to the primary (first) stream
-    primary_entries = []
-    for entry in contents[0]:
-        primary_entries.append({
-            "start": entry["start"],
-            "end": entry["end"],
-            "texts": [entry["text"]]
-        })
-
-    standalone_entries = []
-    for stream_idx in range(1, len(contents)):
-        for s_entry in contents[stream_idx]:
-            overlaps = []
-            s_len = (s_entry["end"] - s_entry["start"]).total_seconds()
-
-            for p_entry in primary_entries:
-                overlap_start = max(p_entry["start"], s_entry["start"])
-                overlap_end = min(p_entry["end"], s_entry["end"])
-                o_len = (overlap_end - overlap_start).total_seconds()
-                if o_len > 0:
-                    p_len = (p_entry["end"] - p_entry["start"]).total_seconds()
-                    if o_len >= MIN_OVERLAP_SECONDS or o_len > MIN_OVERLAP_RATIO * min(s_len, p_len):
-                        overlaps.append(p_entry)
-
-            if not overlaps:
-                standalone_entries.append({
-                    "start": s_entry["start"],
-                    "end": s_entry["end"],
-                    "texts": [s_entry["text"]]
-                })
-            else:
-                for p in overlaps:
-                    if s_entry["text"] not in p["texts"]:
-                        p["texts"].append(s_entry["text"])
-
-    merged_entries = []
-    for p in primary_entries:
-        merged_entries.append({
-            "start": p["start"],
-            "end": p["end"],
-            "text": "\n".join(p["texts"])
-        })
-    for s in standalone_entries:
-        merged_entries.append({
-            "start": s["start"],
-            "end": s["end"],
-            "text": "\n".join(s["texts"])
-        })
-
-    merged_entries.sort(key=lambda x: x["start"])
+    merged_entries = _merge_parsed(contents)
 
     # Generate SRT output
     lines = []
@@ -355,11 +369,12 @@ def merge_streams(
         output_path = output_path.parent / f"{output_path.name}.{langs}.merged.srt"
 
     output_path.write_text(merged_srt, encoding="utf-8")
-    print(f"Merged {len(chosen_streams)} streams into -> {output_path}")
+    if not _quiet:
+        print(f"Merged {len(chosen_streams)} streams into -> {output_path}")
     return 0
 
 
-def _chunk_list(lst: list, chunk_size: int) -> list[list]:
+def _chunk_list(lst: list, chunk_size: int) -> Iterator[list]:
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), chunk_size):
         yield lst[i:i + chunk_size]
@@ -397,8 +412,7 @@ def translate_chunk(client, chunk: list[dict], target_language: str, model: str)
             content = content[3:]
         if content.endswith("```"):
             content = content[:-3]
-            
-        import json
+
         try:
             translated_texts = json.loads(content.strip())
             if not isinstance(translated_texts, list):
@@ -610,8 +624,14 @@ def main() -> int:
     args = parser.parse_args()
 
     # Set module-level verbosity.
-    global _verbose
+    global _verbose, _quiet
     _verbose = args.verbose
+    _quiet = args.quiet
+
+    # Validate input file exists.
+    if not args.input.exists():
+        print(f"error: file '{args.input}' not found", file=sys.stderr)
+        return 2
 
     if args.command == "list":
         return list_streams(args.input)

@@ -89,11 +89,10 @@ class TestProbeSubtitleStreams:
         assert streams[0]["title"] == ""
 
     @patch("pipeline._run")
-    def test_ffprobe_failure_exits(self, mock_run):
+    def test_ffprobe_failure_raises(self, mock_run):
         mock_run.return_value = _fake_run(returncode=1, stderr="ffprobe error")
-        with pytest.raises(SystemExit) as exc:
+        with pytest.raises(RuntimeError, match="ffprobe error"):
             probe_subtitle_streams(Path("bad.mkv"))
-        assert exc.value.code == 1
 
     @patch("pipeline._run")
     def test_empty_stdout_returns_empty(self, mock_run):

@@ -92,9 +92,7 @@ class TestTranscribeStream:
     @patch("pipeline._run")
     @patch("shutil.which", return_value="/usr/local/bin/whisper")
     def test_whisper_failure_returns_code(self, mock_which, mock_run, capsys):
-        ret = transcribe_stream(Path("/movies/movie.mp4"), output_path=None)
         mock_run.return_value = _fake_run(returncode=1, stderr="whisper crashed")
-        # Need to call again with the failing mock
         ret = transcribe_stream(Path("/movies/movie.mp4"), output_path=None)
         assert ret == 1
 
